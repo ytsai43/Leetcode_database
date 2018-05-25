@@ -1,0 +1,428 @@
+
+Drop database if exists leetcode;
+create database leetcode;
+USE leetcode;
+
+-- Problem 175.Combine Two Tables:
+/* Create Table */
+Drop table if exists Person;
+Drop table if exists Address;
+Create table Person (PersonId int, FirstName varchar(255), LastName varchar(255));
+Create table Address (AddressId int, PersonId int, City varchar(255), State varchar(255));
+Truncate table Person;
+insert into Person (PersonId, LastName, FirstName) values ('1', 'Wang', 'Allen');
+Truncate table Address;
+insert into Address (AddressId, PersonId, City, State) values ('1', '2', 'New York City', 'New York');
+
+/* Solution */
+select A.FirstName, A.LastName, B.City, B.State
+from person A 
+left join address B on (A.PersonId = B.PersonId);
+
+-- Problem 176. Second Highest Salary
+/* Create Table */
+Drop table if exists Employee;
+Create table Employee (Id int, Salary int);
+Truncate table Employee;
+insert into Employee (Id, Salary) values ('1', '100');
+insert into Employee (Id, Salary) values ('2', '200');
+insert into Employee (Id, Salary) values ('3', '300');
+
+/* Solution */ -- if there is no highest salary, it returns NULL
+SELECT
+IFNULL
+(
+  (SELECT DISTINCT Salary  -- Becareful!!  using DISTINCT to avoid duplicate data of rank 1. salary in this case
+   FROM employee
+   ORDER BY Salary DESC
+   LIMIT 1 OFFSET 1), NULL  -- offset ? is the n-th location(n-1), limit ? is show how many rows
+) AS SecondHighestSalary;
+
+-- 181. Employees Earning More Than Their Managers
+/* Create Table */
+Drop table if exists employee;
+Create table Employee (Id int, Name varchar(255), Salary int, ManagerId int);
+Truncate table Employee;
+insert into Employee (Id, Name, Salary, ManagerId) values ('1', 'Joe', '70000', '3');
+insert into Employee (Id, Name, Salary, ManagerId) values ('2', 'Henry', '80000', '4');
+insert into Employee (Id, Name, Salary, ManagerId) values ('3', 'Sam', '60000', Null);
+insert into Employee (Id, Name, Salary, ManagerId) values ('4', 'Max', '90000', Null);
+
+/* Solution */
+select *
+from employee e
+left join employee m on e.managerid = m.id
+where e.salary > m.salary;
+
+-- 182. Duplicate Emails
+/* Create Table */
+Drop table if exists person;
+Create table Person (Id int, Email varchar(255));
+Truncate table Person;
+insert into Person (Id, Email) values ('1', 'a@b.com');
+insert into Person (Id, Email) values ('2', 'c@d.com');
+insert into Person (Id, Email) values ('3', 'a@b.com');
+
+/* Solution */
+select email
+from person
+group by email
+having count(email)>1;
+
+-- 183. Customers Who Never Order
+/* Create Table */
+Drop table if exists customers;
+Drop table if exists Orders;
+Create table Customers (Id int, Name varchar(255));
+Create table Orders (Id int, CustomerId int);
+Truncate table Customers;
+insert into Customers (Id, Name) values ('1', 'Joe');
+insert into Customers (Id, Name) values ('2', 'Henry');
+insert into Customers (Id, Name) values ('3', 'Sam');
+insert into Customers (Id, Name) values ('4', 'Max');
+Truncate table Orders;
+insert into Orders (Id, CustomerId) values ('1', '3');
+insert into Orders (Id, CustomerId) values ('2', '1');
+
+/* Solution */
+select c.name
+from customers c 
+where c.id not in 
+(select customerid from orders);
+
+
+-- 196. Delete Duplicate Emails
+-- share the same table as No.182
+Delete p1 
+from person p1
+where p1.email = (select email from person p2 group by email having count(email)>1)
+
+
+SELECT Id, Email FROM Person
+WHERE Id IN ( SELECT MIN(Id) FROM Person GROUP BY Email);
+
+
+/* Solution */
+select min(id), email
+from person
+group by email
+
+
+-- sol2: alter the table directly
+delete p1
+from Person p1, Person p2
+where p1.Email = p2.Email and p1.Id > p2.Id;
+
+
+-- 197. Rising Temperature
+/* Create Table */
+Drop table if exists weather;
+Create table Weather (Id int, RecordDate date, Temperature int);
+Truncate table Weather;
+insert into Weather (Id, RecordDate, Temperature) values ('1', '2015-01-01', '10');
+insert into Weather (Id, RecordDate, Temperature) values ('2', '2015-01-02', '25');
+insert into Weather (Id, RecordDate, Temperature) values ('3', '2015-01-03', '20');
+insert into Weather (Id, RecordDate, Temperature) values ('4', '2015-01-04', '30');
+-- sol1
+select w2.id
+from weather w1, weather w2
+where to_days(w1.RecordDate) = to_days(w2.RecordDate)-1 and w1.Temperature < w2.temperature;
+
+-- sol2
+select a.id
+from weather a
+left join weather b on datediff(a.RecordDate,b.RecordDate)=1  -- datediff is computed by front minus back
+where a.temperature > b.temperature;
+
+-- 577. Employee Bonus
+/* Create Table */
+Drop table if exists employee;
+Drop table if exists Bonus;
+Create table Employee (EmpId int, Name varchar(255), Supervisor int, Salary int);
+Create table Bonus (EmpId int, Bonus int);
+Truncate table Employee;
+insert into Employee (EmpId, Name, Supervisor, Salary) values ('3', 'Brad', Null, '4000');
+insert into Employee (EmpId, Name, Supervisor, Salary) values ('1', 'John', '3', '1000');
+insert into Employee (EmpId, Name, Supervisor, Salary) values ('2', 'Dan', '3', '2000');
+insert into Employee (EmpId, Name, Supervisor, Salary) values ('4', 'Thomas', '3', '4000');
+Truncate table Bonus;
+insert into Bonus (EmpId, Bonus) values ('2', '500');
+insert into Bonus (EmpId, Bonus) values ('4', '2000');
+
+
+/* Solution */
+select *
+from employee e
+left join bonus b on e.empid = b.empid
+where b.bonus <1000 or bonus is null;
+
+
+-- 584. Find Customer Referee
+/* Create Table */
+Drop table if exists customer;
+CREATE TABLE customer (id INT,name VARCHAR(25),referee_id INT);
+Truncate table customer;
+insert into customer (id, name, referee_id) values ('1', 'Will', null);
+insert into customer (id, name, referee_id) values ('2', 'Jane', null);
+insert into customer (id, name, referee_id) values ('3', 'Alex', '2');
+insert into customer (id, name, referee_id) values ('4', 'Bill', null);
+insert into customer (id, name, referee_id) values ('5', 'Zack', '1');
+insert into customer (id, name, referee_id) values ('6', 'Mark', '2');
+
+/* Solution */
+select NAME
+from customer
+WHERE referee_id != 2 or referee_id is null;
+
+
+
+-- 586. Customer Placing the Largest Number of Orders
+/* Create Table */
+Drop table if exists orders;
+Create table orders (order_number int, customer_number int, order_date date, required_date date, shipped_date date, status char(15), comment char(200), key(order_number));
+Truncate table orders;
+insert into orders (order_number, customer_number) values ('1', '1');
+insert into orders (order_number, customer_number) values ('2', '2');
+insert into orders (order_number, customer_number) values ('3', '3');
+insert into orders (order_number, customer_number) values ('4', '3');
+
+
+/* Solution */
+select customer_number
+from orders
+group by customer_number
+order by count(*) desc
+limit 0,1;
+
+/*Follow up: 
+What if more than one customer have the largest number of orders, 
+can you find all the customer_number in this case?
+In the following solution, I use minimum number of orders*/
+select customer_number
+from orders 
+group by customer_number
+having count(distinct order_number) =
+(select min(count_cu) from (select count( distinct order_number) count_cu from orders group by customer_number) temp);
+
+
+
+-- 595. Big Countries
+/* Create Table */
+Drop table if exists world;
+Create table World (name varchar(255), continent varchar(255), area int, population int, gdp bigint);
+Truncate table World;
+insert into World (name, continent, area, population, gdp) values ('Afghanistan', 'Asia', '652230', '25500100', '20343000000');
+insert into World (name, continent, area, population, gdp) values ('Albania', 'Europe', '28748', '2831741', '12960000000');
+insert into World (name, continent, area, population, gdp) values ('Algeria', 'Africa', '2381741', '37100000', '188681000000');
+insert into World (name, continent, area, population, gdp) values ('Andorra', 'Europe', '468', '78115', '3712000000');
+insert into World (name, continent, area, population, gdp) values ('Angola', 'Africa', '1246700', '20609294', '100990000000');
+
+/* Solution */
+select *
+from world
+where area > 3000000 or population >25000000;
+
+-- 596. Classes More Than 5 Students
+/* Create Table */
+Drop table if exists courses;
+Create table courses (student varchar(255), class varchar(255));
+Truncate table courses;
+insert into courses (student, class) values ('A', 'Math');
+insert into courses (student, class) values ('B', 'English');
+insert into courses (student, class) values ('C', 'Math');
+insert into courses (student, class) values ('D', 'Biology');
+insert into courses (student, class) values ('E', 'Math');
+insert into courses (student, class) values ('F', 'Computer');
+insert into courses (student, class) values ('G', 'Math');
+insert into courses (student, class) values ('H', 'Math');
+insert into courses (student, class) values ('I', 'Math');
+
+/* Solution */
+select class 
+from courses
+group by class
+having  count( distinct student) >=5;
+
+
+-- 597. Friend Requests I: Overall Acceptance Rate
+/* Create Table */
+Drop table if exists friend_request;
+Drop table if exists request_accepted;
+Create table friend_request ( sender_id INT NOT NULL, send_to_id INT NULL, request_date DATE NULL);
+Create table request_accepted ( requester_id INT NOT NULL, accepter_id INT NULL, accept_date DATE NULL);
+Truncate table friend_request;
+insert into friend_request (sender_id, send_to_id, request_date) values ('1', '2', '2016/06/01');
+insert into friend_request (sender_id, send_to_id, request_date) values ('1', '3', '2016/06/01');
+insert into friend_request (sender_id, send_to_id, request_date) values ('1', '4', '2016/06/01');
+insert into friend_request (sender_id, send_to_id, request_date) values ('2', '3', '2016/06/02');
+insert into friend_request (sender_id, send_to_id, request_date) values ('3', '4', '2016/06/09');
+Truncate table request_accepted;
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('1', '2', '2016/06/03');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('1', '3', '2016/06/08');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('2', '3', '2016/06/08');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('3', '4', '2016/06/09');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('3', '4', '2016/06/10');
+
+/* Solution */
+select 
+ifnull(round((select count(distinct requester_id, accepter_id)
+from request_accepted)/(select count(distinct sender_id, send_to_id)
+from friend_request),2),0) accept_rate;
+
+
+
+-- 603. Consecutive Available Seats
+/* Create Table */
+drop table if exists cinema;
+Create table cinema (seat_id int primary key auto_increment, free bool);
+Truncate table cinema;
+insert into cinema (seat_id, free) values ('1', '1');
+insert into cinema (seat_id, free) values ('2', '0');
+insert into cinema (seat_id, free) values ('3', '1');
+insert into cinema (seat_id, free) values ('4', '1');
+insert into cinema (seat_id, free) values ('5', '1');
+
+/* Solution */   -- trick! the distinct and abs. abs will make the duplicate data in desired columne, so use distinct to retrieve the answer
+select distinct c1.seat_id
+from cinema c1
+left join cinema c2 on abs(c1.seat_id - c2.seat_id)=1
+where c1.free = 1 and c2.free=1
+order by c1.seat_id;
+
+
+-- 607. Sales Person
+/* Create Table */
+Drop table if exists salesperson;
+Drop table if exists company;
+Drop table if exists orders;
+Create table salesperson (sales_id int, name varchar(255), salary int,commission_rate int, hire_date varchar(255));
+Create table company (com_id int, name varchar(255), city varchar(255));
+Create table orders (order_id int, date varchar(255), com_id int, sales_id int, amount int);
+Truncate table salesperson;
+insert into salesperson (sales_id, name, salary, commission_rate, hire_date) values ('1', 'John', '100000', '6', '4/1/2006');
+insert into salesperson (sales_id, name, salary, commission_rate, hire_date) values ('2', 'Amy', '12000', '5', '5/1/2010');
+insert into salesperson (sales_id, name, salary, commission_rate, hire_date) values ('3', 'Mark', '65000', '12', '12/25/2008');
+insert into salesperson (sales_id, name, salary, commission_rate, hire_date) values ('4', 'Pam', '25000', '25', '1/1/2005');
+insert into salesperson (sales_id, name, salary, commission_rate, hire_date) values ('5', 'Alex', '5000', '10', '2/3/2007');
+Truncate table company;
+insert into company (com_id, name, city) values ('1', 'RED', 'Boston');
+insert into company (com_id, name, city) values ('2', 'ORANGE', 'New York');
+insert into company (com_id, name, city) values ('3', 'YELLOW', 'Boston');
+insert into company (com_id, name, city) values ('4', 'GREEN', 'Austin');
+Truncate table orders;
+insert into orders (order_id, date, com_id, sales_id, amount) values ('1', '1/1/2014', '3', '4', '10000');
+insert into orders (order_id, date, com_id, sales_id, amount) values ('2', '2/1/2014', '4', '5', '5000');
+insert into orders (order_id, date, com_id, sales_id, amount) values ('3', '3/1/2014', '1', '1', '50000');
+insert into orders (order_id, date, com_id, sales_id, amount) values ('4', '4/1/2014', '1', '4', '25000');
+
+/* Solution */ -- where subquery, Becareful! the outer query should use 'not in' and inner query use '= red'; otherwise, if using 'in' and '!= red', it will miss some data we desire 
+select name
+from salesperson 
+where sales_id not in
+(select sales_id
+from orders o
+left join company c on o.com_id = c.com_id
+where c.name = 'red');
+
+select  s.name  -- from subquery
+from salesperson s 
+left join 
+(select distinct o.sales_id
+from orders o 
+inner join company c on o.com_id = c.com_id
+where c.name = 'RED') temp on s.sales_id = temp.sales_id
+where temp.sales_id is null;
+
+-- 610. Triangle Judgement
+/* Create Table */
+Drop table if exists triangle;
+Create table triangle (x int, y int, z int);
+Truncate table triangle;
+insert into triangle (x, y, z) values ('13', '15', '30');
+insert into triangle (x, y, z) values ('10', '20', '15');
+
+/* Solution */
+select x,y,z,
+case 
+when x+y > z and x+z > y and z+y >x then 'yes'
+else 'no' 
+end  AS triangle
+from triangle;
+
+-- 613. Shortest Distance in a Line
+/* Create Table */
+Drop table if exists point;
+CREATE TABLE point (x INT NOT NULL, UNIQUE INDEX x_UNIQUE (x ASC));
+Truncate table point;
+insert into point (x) values ('-1');
+insert into point (x) values ('0');
+insert into point (x) values ('2');
+
+/* Solution */
+select min(distance) shortest
+from (select (abs(a.x-b.x)) distance
+      from point a, point b 
+      where a.x != b.x) as temp;
+
+select min(abs(a.x-b.x)) shortest
+from point a
+left join point b on a.x != b.x;
+
+
+-- 619. Biggest Single Number
+/* Create Table */
+Drop table if exists number;
+Create table If Not Exists number (num int);
+Truncate table number;
+insert into number (num) values ('8');
+insert into number (num) values ('8');
+insert into number (num) values ('3');
+insert into number (num) values ('3');
+insert into number (num) values ('1');
+insert into number (num) values ('4');
+insert into number (num) values ('5');
+insert into number (num) values ('6');
+
+/* Solution */
+select max(num)  
+from 
+(select num
+from number
+group by num 
+having count(num)=1) as temp;
+
+-- 620. Not Boring Movies
+/* Create Table */
+Drop table if exists cinema;
+Create table cinema (id int, movie varchar(255), description varchar(255), rating float(2, 1));
+Truncate table cinema;
+insert into cinema (id, movie, description, rating) values ('1', 'War', 'great 3D', '8.9');
+insert into cinema (id, movie, description, rating) values ('2', 'Science', 'fiction', '8.5');
+insert into cinema (id, movie, description, rating) values ('3', 'irish', 'boring', '6.2');
+insert into cinema (id, movie, description, rating) values ('4', 'Ice song', 'Fantacy', '8.6');
+insert into cinema (id, movie, description, rating) values ('5', 'House card', 'Interesting', '9.1');
+
+/* Solution */
+select *
+from cinema
+where not description = 'boring' and mod(id,2) != 0
+order by rating desc ;
+
+-- 627. Swap Salary
+/* Create Table */
+Drop table if exists salary;
+create table salary(id int, name varchar(100), sex char(1), salary int);
+Truncate table salary;
+insert into salary (id, name, sex, salary) values ('1', 'A', 'm', '2500');
+insert into salary (id, name, sex, salary) values ('2', 'B', 'f', '1500');
+insert into salary (id, name, sex, salary) values ('3', 'C', 'm', '5500');
+insert into salary (id, name, sex, salary) values ('4', 'D', 'f', '500');
+
+/* Solution */
+UPDATE salary
+SET sex = 
+        CASE 
+        WHEN sex ='m' THEN 'f'
+        ELSE 'm'
+        END;
+
