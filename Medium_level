@@ -1,3 +1,8 @@
+Drop database if exists leetcode;
+create database leetcode;
+USE leetcode;
+
+
 -- Problem 177. Nth Highest Salary
 /* Create Table */
 Drop table if exists Employee;
