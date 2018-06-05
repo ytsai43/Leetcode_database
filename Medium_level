@@ -1,0 +1,315 @@
+-- Problem 177. Nth Highest Salary
+/* Create Table */
+Drop table if exists Employee;
+Create table Employee (Id int, Salary int);
+Truncate table Employee;
+insert into Employee (Id, Salary) values ('1', '100');
+insert into Employee (Id, Salary) values ('2', '100');
+insert into Employee (Id, Salary) values ('3', '300');
+
+/* Solution */ -- it return NULL if there is no answer
+drop function if exists NthHighestSalary; 
+DELIMITER $$
+create function NthHighestSalary(N INT) RETURNS INT
+BEGIN
+	declare M INT; 
+	SET M=N-1;
+	RETURN(select distinct salary from employee order by Salary desc limit M,1);
+END $$
+
+
+-- 178. Rank Scores
+/* Create Table */
+drop table if exists Scores;
+Create table Scores (Id int, Score DECIMAL(3,2));
+Truncate table Scores;
+insert into Scores (Id, Score) values ('1', '3.5');
+insert into Scores (Id, Score) values ('2', '3.65');
+insert into Scores (Id, Score) values ('3', '4.0');
+insert into Scores (Id, Score) values ('4', '3.85');
+insert into Scores (Id, Score) values ('5', '4.0');
+insert into Scores (Id, Score) values ('6', '3.65');
+
+/* Solution */
+select score, (select count(distinct score)+1 from scores ss where ss.score > s1.score) rank
+from scores  s1
+order by rank;
+
+/* Solution */
+SELECT
+  Score,(SELECT count(*) FROM (SELECT distinct Score s FROM Scores) tmp WHERE s >= Score) Rank
+FROM Scores
+ORDER BY Score desc;
+
+-- 180. Consecutive Numbers
+/* Create Table */
+Drop table if exists Logs;
+Create table Logs (Id int, Num int);
+Truncate table Logs;
+insert into Logs (Id, Num) values ('1', '1');
+insert into Logs (Id, Num) values ('2', '1');
+insert into Logs (Id, Num) values ('3', '1');
+insert into Logs (Id, Num) values ('4', '2');
+insert into Logs (Id, Num) values ('5', '1');
+insert into Logs (Id, Num) values ('6', '2');
+insert into Logs (Id, Num) values ('7', '2');
+
+/* Solution */
+select distinct a.num ConsecutiveNums
+from logs a 
+left join logs b on a.id = b.id-1
+left join logs c on a.id = c.id-2
+where a.num = b.num = c.num;
+
+
+-- 184. Department Highest Salary
+/* Create Table */
+drop table if exists Employee;
+drop table if exists department;
+Create table Employee (Id int, Name varchar(255), Salary int, DepartmentId int);
+Create table Department (Id int, Name varchar(255));
+Truncate table Employee;
+insert into Employee (Id, Name, Salary, DepartmentId) values ('1', 'Joe', '70000', '1');
+insert into Employee (Id, Name, Salary, DepartmentId) values ('2', 'Henry', '80000', '2');
+insert into Employee (Id, Name, Salary, DepartmentId) values ('3', 'Sam', '60000', '2');
+insert into Employee (Id, Name, Salary, DepartmentId) values ('4', 'Max', '90000', '1');
+Truncate table Department;
+insert into Department (Id, Name) values ('1', 'IT');
+insert into Department (Id, Name) values ('2', 'Sales');
+
+/* Solution */
+select d.name department,e.name employee,e.salary salary
+from employee e
+left join department d on e.departmentid = d.id
+where (e.departmentid,e.salary) in (select departmentid,max(salary) from employee  group by departmentid);
+
+-- 570. Managers with at Least 5 Direct Reports
+/* Create Table */
+drop table if exists employee;
+Create table Employee (Id int, Name varchar(255), Department varchar(255), ManagerId int);
+Truncate table Employee;
+insert into Employee (Id, Name, Department, ManagerId) values ('101', 'John', 'A', null);
+insert into Employee (Id, Name, Department, ManagerId) values ('102', 'Dan', 'A', '101');
+insert into Employee (Id, Name, Department, ManagerId) values ('103', 'James', 'A', '101');
+insert into Employee (Id, Name, Department, ManagerId) values ('104', 'Amy', 'A', '101');
+insert into Employee (Id, Name, Department, ManagerId) values ('105', 'Anne', 'A', '101');
+insert into Employee (Id, Name, Department, ManagerId) values ('106', 'Ron', 'B', '101');
+
+/* Solution */
+select Name
+from employee
+where id in (
+select managerid
+from employee
+group by managerid
+having count(ManagerId )>=5);
+
+
+-- 574. Winning Candidate
+/* Create Table */
+drop table if exists candidate;
+drop table if exists vote;
+Create table Candidate (id int, Name varchar(255));
+Create table Vote (id int, CandidateId int);
+Truncate table Candidate;
+insert into Candidate (id, Name) values ('1', 'A');
+insert into Candidate (id, Name) values ('2', 'B');
+insert into Candidate (id, Name) values ('3', 'C');
+insert into Candidate (id, Name) values ('4', 'D');
+insert into Candidate (id, Name) values ('5', 'E');
+Truncate table Vote;
+insert into Vote (id, CandidateId) values ('1', '2');
+insert into Vote (id, CandidateId) values ('2', '4');
+insert into Vote (id, CandidateId) values ('3', '3');
+insert into Vote (id, CandidateId) values ('4', '2');
+insert into Vote (id, CandidateId) values ('5', '5');
+
+/* Solution */
+select c.Name,num_vote
+from candidate c
+join (select candidateid,count(candidateid) num_vote
+      from vote
+	  group by candidateid) as temp on c.id = temp.candidateid
+order by num_vote desc
+limit 1;
+
+
+-- 578. Get Highest Answer Rate Question
+/* Create Table */
+Drop table if exists survey_log;
+Create table survey_log (uid int, action varchar(255), question_id int, answer_id int, q_num int, timestamp int);
+Truncate table survey_log;
+insert into survey_log (uid, action, question_id, answer_id, q_num, timestamp) values ('5', 'show', '285', Null, '1', '123');
+insert into survey_log (uid, action, question_id, answer_id, q_num, timestamp) values ('5', 'answer', '285', '124124', '1', '124');
+insert into survey_log (uid, action, question_id, answer_id, q_num, timestamp) values ('5', 'show', '369', Null, '2', '125');
+insert into survey_log (uid, action, question_id, answer_id, q_num, timestamp) values ('5', 'skip', '369',Null, '2', '126');
+
+/* Solution */
+select question_id
+from 
+(select question_id, 
+SUM(case  action when 'show' then 1 else 0 end) AS num_show,
+SUM(case  action when 'answer' then 1 else 0 end) AS num_answer
+from survey_log
+group by question_id) temp
+order by(num_answer/num_show) desc
+limit 0,1;
+
+
+-- 580. Count Student Number in Departments
+/* Create Table */
+Drop table if exists student;
+Drop table if exists department;
+CREATE TABLE student (student_id INT,student_name VARCHAR(45), gender VARCHAR(6), dept_id INT);
+CREATE TABLE department (dept_id INT, dept_name VARCHAR(255));
+Truncate table student;
+insert into student (student_id, student_name, gender, dept_id) values ('1', 'Jack', 'M', '1');
+insert into student (student_id, student_name, gender, dept_id) values ('2', 'Jane', 'F', '1');
+insert into student (student_id, student_name, gender, dept_id) values ('3', 'Mark', 'M', '2');
+Truncate table department;
+insert into department (dept_id, dept_name) values ('1', 'Engineering');
+insert into department (dept_id, dept_name) values ('2', 'Science');
+insert into department (dept_id, dept_name) values ('3', 'Law');
+
+/* Solution */
+select d.dept_name,count(student_name) student_number
+from department d
+left join student s on s.dept_id = d.dept_id
+group by dept_name
+order by student_number desc, dept_name;
+
+
+-- 585. Investments in 2016
+/* Create Table */
+Drop table if exists insurance;
+CREATE TABLE insurance (PID INTEGER(11), TIV_2015 NUMERIC(15,2), TIV_2016 NUMERIC(15,2), LAT NUMERIC(5,2), LON NUMERIC(5,2) );
+Truncate table insurance;
+insert into insurance (PID, TIV_2015, TIV_2016, LAT, LON) values ('1', '10', '5', '10', '10');
+insert into insurance (PID, TIV_2015, TIV_2016, LAT, LON) values ('2', '20', '20', '20', '20');
+insert into insurance (PID, TIV_2015, TIV_2016, LAT, LON) values ('3', '10', '30', '20', '20');
+insert into insurance (PID, TIV_2015, TIV_2016, LAT, LON) values ('4', '10', '40', '40', '40');
+
+/* Solution */
+
+select sum(TIV_2016)
+from insurance
+where TIV_2015 in (Select TIV_2015
+from insurance
+group by TIV_2015 
+having count(pid)>1)  and (lat,lon) in 
+(select lat,lon
+from insurance 
+group by lat,lon
+having count(pid) = 1);
+
+-- 602. Friend Requests II: Who Has the Most Friends
+/* Create Table */
+Drop table if exists request_accepted;
+Create table request_accepted ( requester_id INT NOT NULL, accepter_id INT NULL, accept_date DATE NULL);
+Truncate table request_accepted;
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('1', '2', '2016/06/03');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('1', '3', '2016/06/08');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('2', '3', '2016/06/08');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('3', '4', '2016/06/09');
+
+/* Solution */
+select requester_id, count(requester_id)
+from 
+(select requester_id
+from request_accepted
+union all
+select accepter_id
+from request_accepted) temp
+group by requester_id
+order by count(requester_id) desc
+limit 0,1;
+
+
+
+-- 608. Tree Node
+/* Create Table */
+Drop table if exists tree;
+Create table tree (id int, p_id int);
+Truncate table tree;
+insert into tree (id, p_id) values ('1', null);
+insert into tree (id, p_id) values ('2', '1');
+insert into tree (id, p_id) values ('3', '1');
+insert into tree (id, p_id) values ('4', '2');
+insert into tree (id, p_id) values ('5', '2');
+
+/* Solution */
+select distinct t1.id,
+case when t1.p_id is null then 'node'
+     when t2.id is null then 'leaf'
+else 'inner'
+end  type
+from tree t1
+left join tree t2 on t1.id=t2.p_id;
+
+select id,
+(case 
+when id = (select id from tree where p_id is null) then 'root'
+when id in (select p_id from tree ) then 'leaf'
+else 'inner'
+end) type
+from tree;
+
+
+
+-- 612. Shortest Distance in a Plane
+/* Create Table */
+Drop table if exists point_2d;
+CREATE TABLE point_2d (x INT NOT NULL, y INT NOT NULL);
+Truncate table point_2d;
+insert into point_2d (x, y) values ('-1', '-1');
+insert into point_2d (x, y) values ('0', '0');
+insert into point_2d (x, y) values ('-1', '-2');
+
+/* Solution */
+select min(round(sqrt(power(p1.x-p2.x,2)+power(p1.y-p2.y,2)),2)) shortest
+from point_2d p1
+left join point_2d p2 on (p1.x,p1.y) != (p2.x,p2.y)
+
+select round(min(sqrt(power(a.x-b.x,2) + power(a.y-b.y,2))),2) shortest
+from point_2d a, point_2d b 
+where  a.x!=b.x or a.y!=b.y;
+
+
+-- 614. Second Degree Follower
+/* Create Table */
+Drop table if exists follow;
+Create table follow (followee varchar(255), follower varchar(255));
+Truncate table follow;
+insert into follow (followee, follower) values ('A', 'B');
+insert into follow (followee, follower) values ('B', 'C');
+insert into follow (followee, follower) values ('B', 'D');
+insert into follow (followee, follower) values ('D', 'E');
+
+/* Solution */
+select a.followee ,count(a.follower)
+from follow a, follow b
+where a.followee = b.follower 
+group by a.followee 
+order by a.followee;
+
+-- 626. Exchange Seats
+/* Create Table */
+Drop table if exists seat;
+Create table seat(id int, student varchar(255));
+Truncate table seat;
+insert into seat (id, student) values ('1', 'Abbot');
+insert into seat (id, student) values ('2', 'Doris');
+insert into seat (id, student) values ('3', 'Emerson');
+insert into seat (id, student) values ('4', 'Green');
+insert into seat (id, student) values ('5', 'Jeames');
+
+/* Solution */
+select 
+(case
+when id = total_seat then id
+when mod(id,2)=0 then id-1
+else id+1
+end) new_id,student
+from seat,(select count(*) total_seat from seat) temp
+order by new_id
+
